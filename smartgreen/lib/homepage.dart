@@ -8,6 +8,7 @@ import 'screens/supply_list_page.dart';
 import 'screens/plant_list_page.dart';
 import 'screens/cart_page.dart';
 import 'screens/store_product_list_page.dart'; // Admin: cadastrar/gerenciar produtos
+import 'screens/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,8 +21,9 @@ class HomePageState extends State<HomePage> {
   final TextEditingController _searchCtrl = TextEditingController();
   int _currentIndex = 0;
 
-  // Guarda a busca por aba (0: Plantas, 1: Loja, 2: Estoque, 3: Carrinho)
-  final List<String> _tabQueries = ['', '', '', ''];
+  // Guarda a busca por aba (0: Plantas, 1: Loja, 2: Estoque, 3: Carrinho, 4: Perfil)
+  // As abas 0..2 usam busca; 3 e 4 não usam.
+  final List<String> _tabQueries = ['', '', '', '', ''];
 
   // Keys só das páginas que recebem busca
   final GlobalKey<PlantListPageState> _plantKey =
@@ -55,7 +57,7 @@ class HomePageState extends State<HomePage> {
   // Chamado pela Loja (barra flutuante) para ir para a aba Carrinho
   void _goToCartTab() {
     setState(() {
-      if (_currentIndex != 3) {
+      if (_currentIndex != 3 && _currentIndex != 4) {
         _tabQueries[_currentIndex] = _searchCtrl.text;
       }
       _currentIndex = 3;
@@ -73,6 +75,8 @@ class HomePageState extends State<HomePage> {
         return _supplyKey.currentState?.searchHint ?? 'Buscar Item';
       case 3:
         return 'Carrinho de Compras'; // sem busca
+      case 4:
+        return '';
       default:
         return 'Buscar no SmartGreen';
     }
@@ -80,7 +84,7 @@ class HomePageState extends State<HomePage> {
 
   void _dispatchSearch(String q) {
     // Se estiver no Carrinho, ignorar (sem campo de busca)
-    if (_currentIndex == 3) return;
+    if (_currentIndex == 3 || _currentIndex == 4) return;
 
     _tabQueries[_currentIndex] = q;
     switch (_currentIndex) {
@@ -98,8 +102,9 @@ class HomePageState extends State<HomePage> {
   }
 
   PreferredSizeWidget _buildGreenTopBar(BuildContext context) {
-    final canPop = Navigator.of(context).canPop();
-    final isCart = _currentIndex == 3;
+  final canPop = Navigator.of(context).canPop();
+  final isCart = _currentIndex == 3;
+  final isProfile = _currentIndex == 4;
     final isAdmin = getUserData()?.isAdmin == true;
 
     return AppBar(
@@ -118,8 +123,8 @@ class HomePageState extends State<HomePage> {
                 tooltip: 'Voltar',
               ),
 
-            // Se NÃO for carrinho: barra de busca
-            if (!isCart)
+            // Mostrar barra de busca apenas para as abas que a utilizam (0..2)
+            if (!isCart && !isProfile)
               Expanded(
                 child: Container(
                   height: 40,
@@ -195,6 +200,20 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
 
+            // Se for perfil: título centralizado
+            if (isProfile)
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'Perfil',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+
             const SizedBox(width: 8),
 
             // Engrenagem → menu
@@ -246,6 +265,7 @@ class HomePageState extends State<HomePage> {
       ), // <- callback p/ ir à aba Carrinho
       SupplyListPage(key: _supplyKey),
       const CartContent(), // conteúdo do carrinho (sem Scaffold)
+      const ProfilePage(),
     ];
 
     return Scaffold(
@@ -265,7 +285,8 @@ class HomePageState extends State<HomePage> {
 
             // restaura a busca da nova aba (se não for carrinho) e reaplica
             if (_currentIndex != 3) {
-              _searchCtrl.text = _tabQueries[_currentIndex];
+                  // restaurar busca somente para abas que usam busca
+                  _searchCtrl.text = _tabQueries[_currentIndex];
               _searchCtrl.selection = TextSelection.fromPosition(
                 TextPosition(offset: _searchCtrl.text.length),
               );
@@ -299,6 +320,11 @@ class HomePageState extends State<HomePage> {
             icon: Icon(Icons.shopping_cart_outlined),
             activeIcon: Icon(Icons.shopping_cart),
             label: 'Carrinho',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle_outlined),
+            activeIcon: Icon(Icons.account_circle),
+            label: 'Perfil',
           ),
         ],
       ),

@@ -5,9 +5,12 @@ import 'package:smartgreen/homepage.dart';
 
 import 'firebase_options.dart';
 import 'services/cart_service.dart';
+import 'services/settings_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/catalog_page.dart';
 import 'theme/app_colors.dart';
+import 'screens/profile_page.dart';
+import 'screens/cultivation_history_page.dart';
 
 void
 main() async {
@@ -26,6 +29,9 @@ main() async {
               ) =>
                   CartService(),
         ),
+            ChangeNotifierProvider(
+              create: (_) => SettingsService()..load(),
+            ),
       ],
       child:
           const MyApp(),
@@ -195,6 +201,8 @@ class MyApp
               _,
             ) =>
                 const CatalogPage(),
+        '/profile': (_) => const ProfilePage(),
+        '/history': (_) => const CultivationHistoryPage(),
         '/homepage':
             (
               _,
