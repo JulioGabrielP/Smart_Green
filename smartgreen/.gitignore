@@ -32,6 +32,9 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+**/*generated_plugin_registrant*
+**/*generated_plugins.cmake
+smartgreen/pubspec.lock
 
 # Symbolication related
 app.*.symbols
