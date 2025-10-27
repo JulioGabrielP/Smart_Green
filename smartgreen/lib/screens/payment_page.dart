@@ -5,12 +5,14 @@ import 'package:provider/provider.dart';
 import '../models/address.dart';
 import '../models/order.dart';
 import '../models/order_item.dart';
+import '../models/cart_item.dart';
 import '../services/order_service.dart';
 import '../services/cart_service.dart';
 import 'order_confirmation_page.dart';
 import '../widgets/custom_button.dart';
 import 'address_selection_page.dart';
-import '../globals.dart';
+import '../globals.dart'; // Certifique-se de que este arquivo existe e getUserData está definido
+import '../theme/app_colors.dart'; // Importar AppColors para usar as cores customizadas
 
 class PaymentPage extends StatefulWidget {
   final Address selectedAddress;
@@ -24,6 +26,7 @@ class PaymentPage extends StatefulWidget {
 class _PaymentPageState extends State<PaymentPage> {
   String _paymentMethod = 'PIX';
   late Address _selectedAddress;
+  bool _isLoading = false; // Estado para controlar o feedback de loading do botão
 
   @override
   void initState() {
@@ -32,12 +35,15 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _finalizarPedido() async {
+    setState(() => _isLoading = true); // Inicia o loading
+
     final uid = getUserData()?.id;
     if (uid == null || uid.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sessão expirada. Faça login novamente.')),
       );
+      setState(() => _isLoading = false); // Para o loading
       return;
     }
 
@@ -58,22 +64,31 @@ class _PaymentPageState extends State<PaymentPage> {
     final order = Order(
       id: '',
       items: items,
-      addressId: _selectedAddress.id, // apenas referência
+      addressId: _selectedAddress.id,
       paymentMethod: _paymentMethod,
       total: cart.totalPrice,
       createdAt: DateTime.now(),
     );
 
-    final orderId = await orderService.addOrder(order);
-    cart.clearCart();
+    try {
+      final orderId = await orderService.addOrder(order);
+      cart.clearCart();
 
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OrderConfirmationPage(orderId: orderId),
-      ),
-    );
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderConfirmationPage(orderId: orderId),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao finalizar pedido: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false); // Finaliza o loading
+    }
   }
 
   Future<void> _chooseAddress() async {
@@ -88,15 +103,19 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildPaymentOption(String method, String label, String iconPath) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
+      color: _paymentMethod == method ? AppColors.surfaceAlt : cs.surface, // Destaca o selecionado
+      elevation: _paymentMethod == method ? 3 : 1, // Elevação maior para o selecionado
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
-        leading: Image.asset(iconPath, width: 48, height: 48),
-        title: Text(label),
+        leading: Image.asset(iconPath, width: 40, height: 40), // Ícone um pouco menor
+        title: Text(label, style: TextStyle(color: cs.onSurface)),
         trailing: Radio<String>(
           value: method,
           groupValue: _paymentMethod,
           onChanged: (value) => setState(() => _paymentMethod = value!),
+          activeColor: cs.primary, // Cor do rádio button ativo
         ),
         onTap: () => setState(() => _paymentMethod = method),
       ),
@@ -105,6 +124,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
   Widget _addressCard(Address a) {
     final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
 
     final title =
         StringBuffer()
@@ -119,36 +139,66 @@ class _PaymentPageState extends State<PaymentPage> {
     final hasCompl = a.complement.trim().isNotEmpty;
     final hasRef = a.reference.trim().isNotEmpty;
 
-    return InkWell(
-      onTap: _chooseAddress, // tocar para escolher outro endereço
-      borderRadius: BorderRadius.circular(12),
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
+    return Card(
+      color: cs.surface,
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: InkWell(
+        onTap: _chooseAddress, // tocar para escolher outro endereço
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12), // Padding ajustado
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title.toString(),
-                style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface),
               ),
               const SizedBox(height: 4),
-              Text(line2.toString(), style: tt.bodySmall),
-              Text(line3, style: tt.bodySmall),
+              Text(line2.toString(), style: tt.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.8))),
+              Text(line3, style: tt.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.8))),
               if (hasCompl || hasRef) const SizedBox(height: 4),
               if (hasCompl)
-                Text('Complemento: ${a.complement}', style: tt.bodySmall),
+                Text('Complemento: ${a.complement}', style: tt.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.8))),
               if (hasRef)
-                Text('Referência: ${a.reference}', style: tt.bodySmall),
-              const SizedBox(height: 6),
-              Text(
-                'Toque para escolher outro endereço',
-                style: tt.bodySmall?.copyWith(color: Colors.black54),
+                Text('Referência: ${a.reference}', style: tt.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.8))),
+              const SizedBox(height: 8), // Aumentado o espaço
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  'Toque para escolher outro endereço',
+                  style: tt.bodySmall?.copyWith(color: cs.primary.withOpacity(0.8), fontWeight: FontWeight.w500), // Destaca como ação
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Widget para exibir um item do carrinho
+  Widget _buildCartItemSummary(BuildContext context, CartItem item) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${item.quantity}x ${item.product.nome}',
+              style: tt.bodyMedium!.copyWith(color: cs.onSurface.withOpacity(0.9)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(
+            'R\$ ${item.totalPrice.toStringAsFixed(2)}',
+            style: tt.bodyMedium!.copyWith(color: cs.onSurface.withOpacity(0.9)),
+          ),
+        ],
       ),
     );
   }
@@ -171,18 +221,64 @@ class _PaymentPageState extends State<PaymentPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch, // ocupa toda a largura
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  // --- Resumo do Pedido ---
+                  Text(
+                    'Resumo do Pedido:',
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    color: cs.surface,
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          ...cart.items.map((item) => _buildCartItemSummary(context, item)).toList(),
+                          if (cart.items.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                'Seu carrinho está vazio.',
+                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontStyle: FontStyle.italic, color: cs.onSurface.withOpacity(0.7)),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          const Divider(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Subtotal:',
+                                style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
+                              ),
+                              Text(
+                                'R\$ ${cart.totalPrice.toStringAsFixed(2)}',
+                                style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // --- Endereço de Entrega ---
+                  Text(
                     'Endereço de Entrega:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
                   ),
                   _addressCard(_selectedAddress),
                   const SizedBox(height: 24),
-                  const Text(
+
+                  // --- Forma de Pagamento ---
+                  Text(
                     'Escolha a forma de pagamento:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
                   ),
                   const SizedBox(height: 12),
                   _buildPaymentOption('PIX', 'PIX', 'assets/icons/pix.png'),
@@ -191,9 +287,10 @@ class _PaymentPageState extends State<PaymentPage> {
                     'Cartão de Crédito',
                     'assets/icons/cartao_credito.png',
                   ),
+                  // Adicionar o Boleto, mas com foco na estilização, não na lógica
                   _buildPaymentOption(
                     'Boleto',
-                    'Boleto',
+                    'Boleto Bancário',
                     'assets/icons/boleto.png',
                   ),
                 ],
@@ -208,20 +305,20 @@ class _PaymentPageState extends State<PaymentPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Total: R\$ ${cart.totalPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'Total do Pedido: R\$ ${cart.totalPrice.toStringAsFixed(2)}', // Total final
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
                   CustomButton(
-                    label: 'Finalizar Pedido',
+                    label: _isLoading ? 'Processando...' : 'Finalizar Pedido',
                     icon: Icons.check_circle,
                     backgroundColor: cs.primary,
                     textColor: cs.onPrimary,
-                    onPressed: _finalizarPedido,
+                    onPressed: _isLoading || cart.items.isEmpty ? null : _finalizarPedido, // Desabilita se estiver carregando ou carrinho vazio
                   ),
                 ],
               ),
