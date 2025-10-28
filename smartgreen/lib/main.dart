@@ -11,6 +11,7 @@ import 'screens/catalog_page.dart';
 import 'theme/app_colors.dart';
 import 'screens/profile_page.dart';
 import 'screens/cultivation_history_page.dart';
+import 'package:smartgreen/screens/loading_indicator_test_screen.dart';
 
 void
 main() async {
