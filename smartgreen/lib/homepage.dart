@@ -20,6 +20,8 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   final TextEditingController _searchCtrl = TextEditingController();
   int _currentIndex = 0;
+  // Controller para o PageView para controlar as transições de abas
+  late PageController _pageController;
 
   // Guarda a busca por aba (0: Plantas, 1: Loja, 2: Estoque, 3: Carrinho, 4: Perfil)
   // As abas 0..2 usam busca; 3 e 4 não usam.
@@ -35,8 +37,15 @@ class HomePageState extends State<HomePage> {
   Color get _green => const Color(0xFF2E7D32);
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
+    _pageController.dispose(); // Dispose do PageController
     super.dispose();
   }
 
@@ -62,6 +71,7 @@ class HomePageState extends State<HomePage> {
       }
       _currentIndex = 3;
       _searchCtrl.text = ''; // carrinho não usa busca
+      _pageController.jumpToPage(_currentIndex); // Pula para a página sem animação
     });
   }
 
@@ -271,7 +281,19 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildGreenTopBar(context),
-      body: SafeArea(top: false, child: pages[_currentIndex]),
+      body: SafeArea(
+        top: false,
+        // Usando PageView para transições entre as abas
+        child: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(), // Impede o swipe manual
+          onPageChanged: (index) {
+            // Este onPageChanged é acionado apenas se o PageView fosse scrollável.
+            // Como controlamos com jumpToPage/animateToPage, não precisamos de lógica aqui.
+          },
+          children: pages,
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
@@ -282,6 +304,13 @@ class HomePageState extends State<HomePage> {
               _tabQueries[_currentIndex] = _searchCtrl.text;
             }
             _currentIndex = i;
+
+            // Anima a transição para a nova página
+            _pageController.animateToPage(
+              _currentIndex,
+              duration: const Duration(milliseconds: 300), // Duração da animação
+              curve: Curves.easeOut, // Curva da animação para suavidade
+            );
 
             // restaura a busca da nova aba (se não for carrinho) e reaplica
             if (_currentIndex != 3) {

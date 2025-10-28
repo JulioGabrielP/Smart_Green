@@ -2,7 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/plant.dart';
-import 'leaf_glyph.dart';
+import 'leaf_glyph.dart'; // Mantém se ainda for usado, mas não parece estar
 import '../services/user_photo_service.dart';
 
 /// Widget de card para exibir informações de uma planta.
@@ -71,7 +71,7 @@ class PlantCardWidget extends StatelessWidget {
         background: _swipeBg(
           align: Alignment.centerLeft,
           icon: Icons.edit,
-          color: cs.primary.withValues(alpha: 0.1),
+          color: cs.primary.withOpacity(0.1), // Alterado para withOpacity
           iconColor: cs.primary,
           text: 'Editar',
         ),
@@ -79,7 +79,7 @@ class PlantCardWidget extends StatelessWidget {
         secondaryBackground: _swipeBg(
           align: Alignment.centerRight,
           icon: Icons.delete,
-          color: cs.error.withValues(alpha: 0.1),
+          color: cs.error.withOpacity(0.1), // Alterado para withOpacity
           iconColor: cs.error,
           text: 'Apagar',
         ),
@@ -105,13 +105,16 @@ class PlantCardWidget extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ========== IMAGEM (80x80 fixo) ==========
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: _buildImage(),
+                  // ========== IMAGEM (80x80 fixo) - COM HERO ==========
+                  Hero(
+                    tag: 'plantImage-${plant.id}', // Tag Hero deve ser única
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: _buildImage(),
+                      ),
                     ),
                   ),
 
@@ -287,9 +290,9 @@ class PlantCardWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withOpacity(0.15), // Alterado para withOpacity
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)), // Alterado para withOpacity
       ),
       child: Text(
         text,
@@ -336,7 +339,7 @@ class PlantCardWidget extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withOpacity(0.1), // Alterado para withOpacity
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: color),

@@ -613,7 +613,7 @@ class CatalogPageState
                     },
                   ),
 
-                  // barra flutuante do carrinho (resumo)
+                  // barra flutuante do carrinho (resumo) com AnimatedOpacity
                   Consumer<
                     CartService
                   >(
@@ -622,96 +622,79 @@ class CatalogPageState
                       cart,
                       _,
                     ) {
-                      if (cart.items.isEmpty) return const SizedBox.shrink();
-                      final total = cart.totalPrice.toStringAsFixed(
-                        2,
-                      );
-                      final count = cart.items.fold<
-                        int
-                      >(
+                      final bool hasItems = cart.items.isNotEmpty;
+                      final total = cart.totalPrice.toStringAsFixed(2);
+                      final count = cart.items.fold<int>(
                         0,
-                        (
-                          sum,
-                          e,
-                        ) =>
-                            sum +
-                            e.quantity,
+                        (sum, e) => sum + e.quantity,
                       );
 
                       return Positioned(
-                        left:
-                            10,
-                        right:
-                            10,
-                        bottom:
-                            10,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(
-                            12,
-                          ),
-                          onTap: () {
-                            if (widget.goToCart !=
-                                null) {
-                              widget.goToCart!();
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (
-                                        _,
-                                      ) =>
-                                          const CartPage(),
-                                ),
-                              );
-                            }
-                          },
-                          child: Material(
-                            elevation:
-                                4,
-                            borderRadius: BorderRadius.circular(
-                              12,
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal:
-                                    12,
-                                vertical:
-                                    12,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    theme.cardColor, // contrasta com o scaffold
-                                borderRadius: BorderRadius.circular(
-                                  12,
-                                ),
-                                border: Border.all(
-                                  color:
-                                      theme.dividerColor,
-                                ), // usa theme
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.shopping_cart_outlined,
-                                  ),
-                                  const SizedBox(
-                                    width:
-                                        8,
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      '$count item${count == 1 ? '' : 's'} • R\$ $total',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight:
-                                            FontWeight.w600,
-                                      ),
+                        left: 10,
+                        right: 10,
+                        bottom: 10,
+                        child: AnimatedOpacity(
+                          opacity: hasItems ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300), // Duração da animação
+                          curve: Curves.easeOut,
+                          // Para que o AnimatedOpacity remova o widget da árvore quando opacidade 0
+                          // e não ocupe espaço para eventos de toque, usamos um AbsorbPointer.
+                          // Se quiser que ele não esteja na árvore, pode usar AnimatedSwitcher
+                          // ou o próprio if (hasItems) para remover o widget.
+                          // Contudo, para um fade simples e suave, AnimatedOpacity é bom.
+                          child: IgnorePointer( // Ignora eventos de toque quando invisível
+                            ignoring: !hasItems,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () {
+                                if (widget.goToCart != null) {
+                                  widget.goToCart!();
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const CartPage(),
                                     ),
+                                  );
+                                }
+                              },
+                              child: Material(
+                                elevation: 4,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
                                   ),
-                                  const Icon(
-                                    Icons.chevron_right,
+                                  decoration: BoxDecoration(
+                                    color: theme.cardColor, // contrasta com o scaffold
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: theme.dividerColor,
+                                    ), // usa theme
                                   ),
-                                ],
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.shopping_cart_outlined,
+                                      ),
+                                      const SizedBox(
+                                        width: 8,
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          '$count item${count == 1 ? '' : 's'} • R\$ $total',
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
