@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:smartgreen/homepage.dart';
-import 'package:smartgreen/screens/empty_state_test_screen.dart';
 import 'firebase_options.dart';
 import 'services/cart_service.dart';
 import 'services/settings_service.dart';
@@ -11,7 +10,6 @@ import 'screens/catalog_page.dart';
 import 'theme/app_colors.dart';
 import 'screens/profile_page.dart';
 import 'screens/cultivation_history_page.dart';
-import 'package:smartgreen/screens/loading_indicator_test_screen.dart';
 
 void
 main() async {
