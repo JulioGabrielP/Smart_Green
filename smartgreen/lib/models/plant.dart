@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Plant { 
+class Plant {
   final String id;
   final String name;
+  final String? vasoId;
   final int? temperaturaMin;
   final int? temperaturaMax;
   final int? umidadeMin;
@@ -16,9 +17,10 @@ class Plant {
   final String? imageURL; // Suporta chaves 'imageURL' e 'imageUrl'
   final String? userId; // Já existente e mantido
 
-  Plant({ 
+  Plant({
     required this.id,
     required this.name,
+    this.vasoId,
     this.temperaturaMin,
     this.temperaturaMax,
     this.umidadeMin,
@@ -31,11 +33,12 @@ class Plant {
     this.horasLuz,
     this.imageURL, // Adicionado
     this.userId, // Mantido
-  }); 
+  });
 
   Plant copyWith({
     String? id,
     String? name,
+    String? vasoId,
     int? temperaturaMin,
     int? temperaturaMax,
     int? umidadeMin,
@@ -50,59 +53,147 @@ class Plant {
     String? userId,
   }) {
     return Plant(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      temperaturaMin: temperaturaMin ?? this.temperaturaMin,
-      temperaturaMax: temperaturaMax ?? this.temperaturaMax,
-      umidadeMin: umidadeMin ?? this.umidadeMin,
-      umidadeMax: umidadeMax ?? this.umidadeMax,
-      dataPlantio: dataPlantio ?? this.dataPlantio,
-      exposicaoSolar: exposicaoSolar ?? this.exposicaoSolar,
-      status: status ?? this.status,
-      mediaTemperatura: mediaTemperatura ?? this.mediaTemperatura,
-      mediaUmidade: mediaUmidade ?? this.mediaUmidade,
-      horasLuz: horasLuz ?? this.horasLuz,
-      imageURL: imageURL ?? this.imageURL,
-      userId: userId ?? this.userId,
+      id:
+          id ??
+          this.id,
+      name:
+          name ??
+          this.name,
+      vasoId:
+          vasoId ??
+          this.vasoId,
+      temperaturaMin:
+          temperaturaMin ??
+          this.temperaturaMin,
+      temperaturaMax:
+          temperaturaMax ??
+          this.temperaturaMax,
+      umidadeMin:
+          umidadeMin ??
+          this.umidadeMin,
+      umidadeMax:
+          umidadeMax ??
+          this.umidadeMax,
+      dataPlantio:
+          dataPlantio ??
+          this.dataPlantio,
+      exposicaoSolar:
+          exposicaoSolar ??
+          this.exposicaoSolar,
+      status:
+          status ??
+          this.status,
+      mediaTemperatura:
+          mediaTemperatura ??
+          this.mediaTemperatura,
+      mediaUmidade:
+          mediaUmidade ??
+          this.mediaUmidade,
+      horasLuz:
+          horasLuz ??
+          this.horasLuz,
+      imageURL:
+          imageURL ??
+          this.imageURL,
+      userId:
+          userId ??
+          this.userId,
     );
   }
 
-  factory Plant.fromMap(String id, Map<String, dynamic> data) {
+  factory Plant.fromMap(
+    String id,
+    Map<
+      String,
+      dynamic
+    >
+    data,
+  ) {
     return Plant(
-      id: id,
-      name: data['name'] ?? '',
-      temperaturaMin: data['temperaturaMin'],
-      temperaturaMax: data['temperaturaMax'],
-      umidadeMin: data['umidadeMin'],
-      umidadeMax: data['umidadeMax'],
-      dataPlantio: (data['dataPlantio'] as Timestamp?)?.toDate(),
-      exposicaoSolar: data['exposicaoSolar'],
-      status: data['status'] ?? 'verde',
-      mediaTemperatura: (data['mediaTemperatura'] as num?)?.toDouble(),
-      mediaUmidade: (data['mediaUmidade'] as num?)?.toDouble(),
-      horasLuz: (data['horasLuz'] as num?)?.toDouble(),
-      imageURL: data['imageURL'] ?? data['imageUrl'],
-      userId: data['userId'], // Mantido
+      id:
+          id,
+      name:
+          data['name'] ??
+          '',
+      vasoId:
+          data['vasoId'],
+      temperaturaMin:
+          data['temperaturaMin'],
+      temperaturaMax:
+          data['temperaturaMax'],
+      umidadeMin:
+          data['umidadeMin'],
+      umidadeMax:
+          data['umidadeMax'],
+      dataPlantio:
+          (data['dataPlantio']
+                  as Timestamp?)
+              ?.toDate(),
+      exposicaoSolar:
+          data['exposicaoSolar'],
+      status:
+          data['status'] ??
+          'verde',
+      mediaTemperatura:
+          (data['mediaTemperatura']
+                  as num?)
+              ?.toDouble(),
+      mediaUmidade:
+          (data['mediaUmidade']
+                  as num?)
+              ?.toDouble(),
+      horasLuz:
+          (data['horasLuz']
+                  as num?)
+              ?.toDouble(),
+      imageURL:
+          data['imageURL'] ??
+          data['imageUrl'],
+      userId:
+          data['userId'], // Mantido
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<
+    String,
+    dynamic
+  >
+  toMap() {
     return {
-      'name': name,
-      'temperaturaMin': temperaturaMin,
-      'temperaturaMax': temperaturaMax,
-      'umidadeMin': umidadeMin,
-      'umidadeMax': umidadeMax,
+      'name':
+          name,
+      'vasoId':
+          vasoId,
+      'temperaturaMin':
+          temperaturaMin,
+      'temperaturaMax':
+          temperaturaMax,
+      'umidadeMin':
+          umidadeMin,
+      'umidadeMax':
+          umidadeMax,
       'dataPlantio':
-          dataPlantio != null ? Timestamp.fromDate(dataPlantio!) : null,
-      'exposicaoSolar': exposicaoSolar,
-      'status': status,
-      'mediaTemperatura': mediaTemperatura,
-      'mediaUmidade': mediaUmidade,
-      'horasLuz': horasLuz,
+          dataPlantio !=
+                  null
+              ? Timestamp.fromDate(
+                dataPlantio!,
+              )
+              : null,
+      'exposicaoSolar':
+          exposicaoSolar,
+      'status':
+          status,
+      'mediaTemperatura':
+          mediaTemperatura,
+      'mediaUmidade':
+          mediaUmidade,
+      'horasLuz':
+          horasLuz,
       // Persistimos com a chave 'imageUrl' (compatível com dados existentes)
-      'imageUrl': imageURL,
-      'userId': userId, // Mantido
+      'imageUrl':
+          imageURL,
+      'userId':
+          userId, // Mantido
     };
   }
 }

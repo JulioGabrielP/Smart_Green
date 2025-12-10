@@ -473,7 +473,7 @@ class _ProductFormPageState
                   DropdownButtonFormField<
                     String
                   >(
-                    value:
+                    initialValue:
                         _catValue?.isNotEmpty ==
                                 true
                             ? _catValue
@@ -628,7 +628,7 @@ class _ProductFormPageState
                     DropdownButtonFormField<
                       String
                     >(
-                      value:
+                      initialValue:
                           _tempoSolValue?.isNotEmpty ==
                                   true
                               ? _tempoSolValue
