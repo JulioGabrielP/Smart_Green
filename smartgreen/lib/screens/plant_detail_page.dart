@@ -1,13 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart'; // Corrigido aqui!
+import 'package:image_picker/image_picker.dart'; 
 
 import '../models/plant.dart';
 import '../services/plant_service.dart';
 import '../services/user_photo_service.dart';
 import 'plant_form_page.dart';
-import 'control_page.dart';
 
 class PlantDetailPage extends StatefulWidget {
   final String plantId;
@@ -24,11 +23,51 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
   String? _localPhotoPath;
   final _photoService = UserPhotoService();
 
+  // ===========================================================================
+  // [ÁREA DE INTEGRAÇÃO - MEMBRO DO GRUPO]
+  // ===========================================================================
+  // Essas são as variáveis que vão segurar os dados vindos da nuvem (Firebase/IoT).
+  // Atualmente estão nulas, o que fará aparecer "Carregando..." ou "--".
+  double? _sensorTemp;     // Temperatura atual
+  double? _sensorHumidity; // Umidade atual
+  double? _sensorLight;    // Luminosidade atual
+  String _sensorStatus = 'Atualizando...'; // Status calculado
+  // ===========================================================================
+
   @override
   void initState() {
     super.initState();
     _loadPlant();
+    _fetchSensorData(); // Chama a função que busca os dados dos sensores
   }
+
+  // ===========================================================================
+  // [ÁREA DE INTEGRAÇÃO - MEMBRO DO GRUPO]
+  // DICA: Substitua o conteúdo desta função pela chamada real à API/Firebase
+  // ===========================================================================
+  Future<void> _fetchSensorData() async {
+    // TODO: Implementar a lógica real de busca de dados aqui.
+    // Exemplo: final dados = await IotService.getLatestData(widget.plantId);
+    
+    try {
+      // Simulando um delay de rede (remover isso na versão final)
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!mounted) return;
+
+      setState(() {
+        // AQUI VOCÊ ATRIBUI OS VALORES REAIS
+        // Exemplo: _sensorTemp = dados.temperatura;
+        _sensorTemp = 26.5;      // Valor Exemplo (Apagar depois)
+        _sensorHumidity = 55.0;  // Valor Exemplo (Apagar depois)
+        _sensorLight = 14.2;     // Valor Exemplo (Apagar depois)
+        _sensorStatus = 'Saudável';
+      });
+    } catch (e) {
+      debugPrint("Erro ao buscar dados dos sensores: $e");
+    }
+  }
+  // ===========================================================================
 
   Future<void> _loadPlant() async {
     try {
@@ -115,17 +154,14 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
               ),
               const SizedBox(height: 24),
 
-              // Seção de Informações (Temperatura, Umidade, Luz, Status)
-              _buildInfoSection(colorScheme, textTheme, plant),
+              _buildInfoSection(colorScheme, textTheme),
               const SizedBox(height: 24),
 
-              // Gráficos de Histórico (Mock Visual / Placeholder)
               _buildSectionTitle(context, 'Histórico de Dados'),
               const SizedBox(height: 12),
               _buildChartPlaceholder(colorScheme),
               const SizedBox(height: 24),
 
-              // Seção de Cuidados Recomendados
               _buildSectionTitle(context, 'Cuidados Recomendados'),
               const SizedBox(height: 12),
               _buildRecommendedCare(colorScheme, textTheme),
@@ -134,23 +170,6 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const ControlPage(),
-            ),
-          );
-        },
-        label: Text(
-          'Controlar Vaso',
-          style: textTheme.titleMedium!.copyWith(color: colorScheme.onPrimary),
-        ),
-        icon: const Icon(Icons.settings_remote),
-        backgroundColor: colorScheme.tertiary,
-        foregroundColor: colorScheme.onTertiary,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -164,7 +183,7 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
     );
   }
 
-  Widget _buildInfoSection(ColorScheme colorScheme, TextTheme textTheme, Plant plant) {
+  Widget _buildInfoSection(ColorScheme colorScheme, TextTheme textTheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -178,25 +197,25 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
                 _buildInfoRow(
                   icon: Icons.thermostat,
                   label: 'Temperatura',
-                  value: '${plant.mediaTemperatura?.toStringAsFixed(1) ?? 'N/A'} °C',
+                  value: _sensorTemp != null ? '${_sensorTemp!.toStringAsFixed(1)} °C' : 'Carregando...',
                   color: Colors.redAccent,
                 ),
                 _buildInfoRow(
                   icon: Icons.opacity,
                   label: 'Umidade',
-                  value: '${plant.mediaUmidade?.toStringAsFixed(1) ?? 'N/A'} %',
+                  value: _sensorHumidity != null ? '${_sensorHumidity!.toStringAsFixed(1)} %' : 'Carregando...',
                   color: Colors.blueAccent,
                 ),
                 _buildInfoRow(
                   icon: Icons.wb_sunny,
                   label: 'Luminosidade',
-                  value: '${plant.horasLuz?.toStringAsFixed(1) ?? 'N/A'} h',
+                  value: _sensorLight != null ? '${_sensorLight!.toStringAsFixed(1)} h' : 'Carregando...',
                   color: Colors.amber,
                 ),
                 _buildInfoRow(
                   icon: Icons.favorite,
                   label: 'Status da Planta',
-                  value: 'Saudável',
+                  value: _sensorStatus,
                   color: colorScheme.secondary,
                 ),
               ],
@@ -227,7 +246,10 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+              fontWeight: FontWeight.bold,
+              color: value == 'Carregando...' ? Colors.grey : null,
+            ),
           ),
         ],
       ),
@@ -243,18 +265,31 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
         border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
       ),
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.bar_chart, size: 50, color: colorScheme.onSurface.withOpacity(0.4)),
-            const SizedBox(height: 8),
-            Text(
-              'Gráficos de histórico aqui',
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.hourglass_empty, size: 50, color: colorScheme.onSurface.withOpacity(0.4)),
+              const SizedBox(height: 12),
+              Text(
+                'Coletando dados...',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'É necessário coletar dados por pelo menos 7 dias para gerar o histórico visual.',
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -309,79 +344,6 @@ class _PlantDetailPageState extends State<PlantDetailPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSliderRow({
-    required String title,
-    required double value,
-    required double min,
-    required double max,
-    required LinearGradient gradient,
-    required String unit,
-    required IconData icon,
-    required Color iconColor,
-  }) {
-    final clamped = value.clamp(min, max);
-    final t = (clamped - min) / (max - min == 0 ? 1 : (max - min));
-    const trackHeight = 12.0;
-    const markerSize = 24.0;
-    const innerIconSize = 16.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$title: ${clamped.toStringAsFixed(1)} $unit',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 6),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final left = (w - markerSize) * t;
-            final top = (24 - markerSize) / 2;
-            return SizedBox(
-              height: 24,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    top: (24 - trackHeight) / 2,
-                    bottom: (24 - trackHeight) / 2,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: gradient,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: left,
-                    top: top,
-                    child: Builder(
-                      builder: (context) {
-                        final cs = Theme.of(context).colorScheme;
-                        return Container(
-                          width: markerSize,
-                          height: markerSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(color: cs.primary, width: 2),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(icon, size: innerIconSize, color: iconColor),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 18),
-      ],
     );
   }
 

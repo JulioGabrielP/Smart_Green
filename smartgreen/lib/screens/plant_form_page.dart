@@ -24,6 +24,7 @@ class _PlantFormPageState extends State<PlantFormPage> {
   final _service = PlantService();
 
   final _nameController = TextEditingController();
+  final _idController = TextEditingController(); // Controlador do ID adicionado
   final _tempMinController = TextEditingController();
   final _tempMaxController = TextEditingController();
   final _umidMinController = TextEditingController();
@@ -64,6 +65,7 @@ class _PlantFormPageState extends State<PlantFormPage> {
     final p = widget.existingPlant;
     if (p != null) {
       _nameController.text = p.name;
+      _idController.text = p.id; // Preenche o ID se for edição
       _tempMinController.text = p.temperaturaMin?.toString() ?? '';
       _tempMaxController.text = p.temperaturaMax?.toString() ?? '';
       _umidMinController.text = p.umidadeMin?.toString() ?? '';
@@ -108,6 +110,7 @@ class _PlantFormPageState extends State<PlantFormPage> {
     _debounce?.cancel();
     _nameFocus.dispose();
     _nameController.dispose();
+    _idController.dispose(); // Descarte do controller do ID
     _tempMinController.dispose();
     _tempMaxController.dispose();
     _umidMinController.dispose();
@@ -229,6 +232,26 @@ class _PlantFormPageState extends State<PlantFormPage> {
                 return null;
               },
             ),
+            
+            const SizedBox(height: 12),
+            
+            // Campo ID (Adicionado conforme solicitado)
+            TextFormField(
+              controller: _idController,
+              decoration: InputDecoration(
+                labelText: 'ID da Planta / Hardware',
+                hintText: 'Ex: SENSOR_01 ou ESP32_T1',
+                prefixIcon: Icon(Icons.qr_code, color: cs.primary),
+                helperText: 'Identificador único do dispositivo',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Informe o ID';
+                }
+                return null;
+              },
+            ),
+
             const SizedBox(height: 12),
 
             // Loading Indicator
@@ -721,7 +744,7 @@ class _PlantFormPageState extends State<PlantFormPage> {
 
     try {
       final plant = Plant(
-        id: widget.existingPlant?.id ?? '',
+        id: _idController.text.trim(), // ID capturado do input manual
         name: _nameController.text.trim(),
         temperaturaMin: int.tryParse(_tempMinController.text),
         temperaturaMax: int.tryParse(_tempMaxController.text),

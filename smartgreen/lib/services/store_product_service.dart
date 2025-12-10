@@ -8,8 +8,27 @@ class StoreProductService {
     // Não ordena por 'name', pois não existe mais. Pode ordenar por CientificName se necessário.
     final q = _col.orderBy('CientificName');
     return q.snapshots().map((snap) {
-      final items =
-          snap.docs.map((d) => StoreProduct.fromMap(d.id, d.data())).toList();
+      final items = <StoreProduct>[];
+
+      for (var d in snap.docs) {
+        final p = StoreProduct.fromMap(d.id, d.data());
+
+        // --- BLOCO DE LIMPEZA AUTOMÁTICA ---
+        // Verifica se é um dos mockups antigos problemáticos e deleta do banco
+        if (p.nome == 'Cenoura Nantes' ||
+            p.nome == 'Tomate Italiano' ||
+            p.nome == 'Pimentão Amarelo' ||
+            p.nome.startsWith('Luvas de Jardinagem')) {
+          
+          // Deleta o item do Firebase automaticamente
+          _col.doc(p.id).delete();
+          continue; // Pula este item para ele não aparecer na lista
+        }
+        // ------------------------------------
+
+        items.add(p);
+      }
+
       if (search == null || search.trim().isEmpty) return items;
       final s = search.toLowerCase().trim();
       return items

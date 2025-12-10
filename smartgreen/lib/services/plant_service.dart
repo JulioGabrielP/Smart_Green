@@ -68,7 +68,15 @@ class PlantService {
       if (data.userId == null || data.userId!.isEmpty) {
         throw Exception('Usuário não autenticado para salvar a planta');
       }
-      await _db.collection('plants').add(data.toMap());
+
+      // Verificação adicionada: se o ID vier preenchido, usa .doc(id).set()
+      // Caso contrário, usa .add() para gerar ID automático
+      if (data.id.isNotEmpty) {
+        await _db.collection('plants').doc(data.id).set(data.toMap());
+      } else {
+        await _db.collection('plants').add(data.toMap());
+      }
+
     } catch (e, st) {
       developer.log('Erro ao criar planta: $e', name: 'PlantService', stackTrace: st);
       rethrow;
@@ -83,4 +91,3 @@ class PlantService {
     await _db.collection('plants').doc(id).delete();
   }
 }
-
